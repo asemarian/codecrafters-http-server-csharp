@@ -4,9 +4,6 @@ using System.Text.RegularExpressions;
 
 internal class Program
 {
-    const string OK = "HTTP/1.1 200 OK\r\n\r\n";
-    const string NotFound = "HTTP/1.1 404 Not Found\r\n\r\n";
-
     private static void Main(string[] args)
     {
         try
@@ -40,6 +37,7 @@ internal class Program
         }
 
     }
+
     private static string GetPath(string input)
     {
         string pattern = @"^\w+\s+([^\s]+)\s+HTTP/.*$";
@@ -55,14 +53,38 @@ internal class Program
 
     private static void RespondToClient(string path, NetworkStream stream)
     {
-        switch (path)
+        HttpResponseBuilder response = new();
+
+        if (path.StartsWith("/echo/"))
         {
-            case "/":
-                stream.Write(System.Text.Encoding.ASCII.GetBytes(OK));
-                break;
-            default:
-                stream.Write(System.Text.Encoding.ASCII.GetBytes(NotFound));
-                break;
+            string echoValue = ParseEchoPath(path);
+    
+            response.SetStatusCode(HttpStatusCode.OK);
+            response.SetHeader("Content-Type", "text/plain");
+            response.SetHeader("Content-Length", (echoValue.Length).ToString());
+            response.SetBody(echoValue);
         }
+        else if (path == "/")
+        {
+            response.SetStatusCode(HttpStatusCode.OK);
+        }
+        else
+        {
+            response.SetStatusCode(HttpStatusCode.NotFound);
+        }
+
+        stream.Write(System.Text.Encoding.ASCII.GetBytes(response.GetResponse()));
+    }
+
+    private static string ParseEchoPath(string path)
+    {
+        Match result = Regex.Match(path, @"^.*\/echo\/([^\s]+).*$", RegexOptions.Multiline);
+
+        if (result.Success)
+        {
+            return result.Groups[1].Value;
+        }
+
+        return "";
     }
 }
