@@ -8,26 +8,14 @@ internal class Program
     {
         try
         {
-            // bind to a tcp port
-            using TcpListener server = new TcpListener(IPAddress.Any, 4221);
+            using TcpListener server = new(IPAddress.Any, 4221);
             server.Start();
 
-            // listen for incoming connection requests
             while (true)
             {
                 using var client = server.AcceptTcpClient();
-
                 Console.WriteLine("Client accepted!");
-
-                using var stream = client.GetStream();
-                byte[] buffer = new byte[256];
-
-                stream.Read(buffer, 0, buffer.Length);
-
-                HttpRequest request = new(System.Text.Encoding.ASCII.GetString(buffer));
-
-                // TODO: replace with a dedicated routing class
-                RespondToClient(request, stream);
+                _ = Task.Run(() => HandleClient(client));
             }
         }
         catch (SocketException e)
@@ -36,15 +24,29 @@ internal class Program
         }
     }
 
-    private static void RespondToClient(HttpRequest request, NetworkStream stream)
+    private static void HandleClient(TcpClient client)
     {
+        using var stream = client.GetStream();
+        byte[] buffer = new byte[256];
+
+        stream.Read(buffer, 0, buffer.Length);
+
+        HttpRequest request = new(System.Text.Encoding.ASCII.GetString(buffer));
+
+        // TODO: replace with a dedicated routing class
+        RespondToClient(request, client);
+    }
+
+    private static void RespondToClient(HttpRequest request, TcpClient client)
+    {
+        var stream = client.GetStream();
         var path = request.Path;
         HttpResponseBuilder response = new();
 
         if (path.StartsWith("/echo/"))
         {
             string echoValue = ParseEchoPath(path);
-    
+
             response.SetStatusCode(HttpStatusCode.OK);
             response.SetHeader("Content-Type", "text/plain");
             response.SetHeader("Content-Length", (echoValue.Length).ToString());
