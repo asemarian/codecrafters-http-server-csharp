@@ -9,7 +9,7 @@ internal class Program
         try
         {
             // bind to a tcp port
-            TcpListener server = new TcpListener(IPAddress.Any, 4221);
+            using TcpListener server = new TcpListener(IPAddress.Any, 4221);
             server.Start();
 
             // listen for incoming connection requests
@@ -19,40 +19,26 @@ internal class Program
 
                 Console.WriteLine("Client accepted!");
 
-                var stream = client.GetStream();
+                using var stream = client.GetStream();
                 byte[] buffer = new byte[256];
 
                 stream.Read(buffer, 0, buffer.Length);
 
-                var request = System.Text.Encoding.ASCII.GetString(buffer);
+                HttpRequest request = new(System.Text.Encoding.ASCII.GetString(buffer));
 
-                string? path = GetPath(request);
-
-                RespondToClient(path, stream);
+                // TODO: replace with a dedicated routing class
+                RespondToClient(request, stream);
             }
         }
         catch (SocketException e)
         {
             Console.WriteLine($"SocketException: {e}");
         }
-
     }
 
-    private static string GetPath(string input)
+    private static void RespondToClient(HttpRequest request, NetworkStream stream)
     {
-        string pattern = @"^\w+\s+([^\s]+)\s+HTTP/.*$";
-        Match match = Regex.Match(input, pattern, RegexOptions.Multiline);
-
-        if (match.Success)
-        {
-            return match.Groups[1].Value;
-        }
-
-        throw new ArgumentException("HTTP request is not valid");
-    }
-
-    private static void RespondToClient(string path, NetworkStream stream)
-    {
+        var path = request.Path;
         HttpResponseBuilder response = new();
 
         if (path.StartsWith("/echo/"))
@@ -67,6 +53,13 @@ internal class Program
         else if (path == "/")
         {
             response.SetStatusCode(HttpStatusCode.OK);
+        }
+        else if (path == "/user-agent" && request.Method == "GET")
+        {
+            response.SetHeader("Content-Type", "text/plain");
+            response.SetHeader("Content-Length", request.Headers["User-Agent"].Length.ToString());
+            response.SetStatusCode(HttpStatusCode.OK);
+            response.SetBody(request.Headers["User-Agent"]);
         }
         else
         {
