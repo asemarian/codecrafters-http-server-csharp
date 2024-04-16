@@ -6,7 +6,7 @@ class HttpRequest
     public string Method { get; set; }
     public string Path { get; set; }
     public Dictionary<string, string> Headers { get; set; } = [];
-    public string Body { get; set; }
+    public string? Body { get; set; }
 
     public HttpRequest(string request)
     {
@@ -48,10 +48,8 @@ class HttpRequest
         {
             Body = match.Groups[1].Value.Trim();
         }
-        else
-        {
-            throw new ArgumentException("Malformed HTTP request");
-        }
+
+        Body = null;
     }
 
     private void ParseHeaders()
@@ -70,10 +68,6 @@ class HttpRequest
                 string value = pair.Split(":")[1].Trim();
                 Headers.Add(key, value);
             }
-        }
-        else
-        {
-            throw new ArgumentException("Malformed HTTP request");
         }
     }
 }
