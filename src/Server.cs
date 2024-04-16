@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 
-TcpListener server = new(IPAddress.Any, 4221);
+using TcpListener server = new(IPAddress.Any, 4221);
 
 try
 {
@@ -10,7 +10,7 @@ try
 
     while (true)
     {
-        var client = await server.AcceptTcpClientAsync();
+        TcpClient client = await server.AcceptTcpClientAsync();
         Console.WriteLine("Client accepted!");
         _ = Task.Run(() => HandleClient(client));
     }
@@ -19,14 +19,10 @@ catch (SocketException e)
 {
     Console.WriteLine($"SocketException: {e}");
 }
-finally
-{
-    server.Dispose();
-}
 
 void HandleClient(TcpClient client)
 {
-    using var stream = client.GetStream();
+    var stream = client.GetStream();
     byte[] buffer = new byte[256];
 
     stream.Read(buffer, 0, buffer.Length);
@@ -39,7 +35,7 @@ void HandleClient(TcpClient client)
 
 void RespondToClient(HttpRequest request, TcpClient client)
 {
-    using var stream = client.GetStream();
+    var stream = client.GetStream();
     var path = request.Path;
     HttpResponseBuilder response = new();
 

@@ -48,8 +48,10 @@ class HttpRequest
         {
             Body = match.Groups[1].Value.Trim();
         }
-
-        Body = null;
+        else
+        {
+            Body = null;
+        }
     }
 
     private void ParseHeaders()
@@ -58,7 +60,7 @@ class HttpRequest
 
         Match match = Regex.Match(Request, pattern, RegexOptions.Multiline);
 
-        if (match.Success)
+        if (match.Success && (match.Groups[1].Value != string.Empty))
         {
             var headers = match.Groups[1].Value.Split("\r\n");
 
