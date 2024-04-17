@@ -22,6 +22,7 @@ class HttpResponseBuilder
 
     public void SetStatusCode(HttpStatusCode statusCode)
     {
+        // TODO: status text needs to be modified if it contains multiple words (e.g. Not Found instead of NotFound) 
         StartLine = $"{StartLine} {(int)statusCode} {statusCode}{Delimiter}";
     }
 

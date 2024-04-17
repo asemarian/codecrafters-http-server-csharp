@@ -48,6 +48,30 @@ void RespondToClient(HttpRequest request, TcpClient client)
         response.SetHeader("Content-Length", echoValue.Length.ToString());
         response.SetBody(echoValue);
     }
+    else if (path.StartsWith("/files/"))
+    {
+        string directory = args[1];
+
+        Console.WriteLine(directory);
+
+        string fileName = ParseFileName(path);
+        Console.WriteLine($"full path: '{Path.Combine([directory, fileName])}");
+        var filePath = Path.Combine([directory, fileName]);
+        if (File.Exists(filePath))
+        {
+            response.SetStatusCode(HttpStatusCode.OK);
+            response.SetHeader("Content-Type", "application/octet-stream");
+            
+            var file = File.ReadAllText(filePath);
+
+            response.SetHeader("Content-Length", file.Length.ToString());
+            response.SetBody(file);
+        }
+        else
+        {
+            response.SetStatusCode(HttpStatusCode.NotFound);
+        }
+    }
     else if (path == "/")
     {
         response.SetStatusCode(HttpStatusCode.OK);
@@ -71,6 +95,18 @@ void RespondToClient(HttpRequest request, TcpClient client)
 string ParseEchoPath(string path)
 {
     Match result = Regex.Match(path, @"^.*\/echo\/([^\s]+).*$", RegexOptions.Multiline);
+
+    if (result.Success)
+    {
+        return result.Groups[1].Value;
+    }
+
+    return "";
+}
+
+string ParseFileName(string path)
+{
+    Match result = Regex.Match(path, @"\/files\/(.*)", RegexOptions.Multiline);
 
     if (result.Success)
     {
