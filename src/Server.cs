@@ -11,7 +11,6 @@ try
     while (true)
     {
         TcpClient client = await server.AcceptTcpClientAsync();
-        Console.WriteLine("Client accepted!");
         _ = Task.Run(() => HandleClient(client));
     }
 }
@@ -48,7 +47,7 @@ void RespondToClient(HttpRequest request, TcpClient client)
         response.SetHeader("Content-Length", echoValue.Length.ToString());
         response.SetBody(echoValue);
     }
-    else if (path.StartsWith("/files/"))
+    else if (path.StartsWith("/files/") && request.Method == "GET")
     {
         string directory = args[1];
 
@@ -61,7 +60,7 @@ void RespondToClient(HttpRequest request, TcpClient client)
         {
             response.SetStatusCode(HttpStatusCode.OK);
             response.SetHeader("Content-Type", "application/octet-stream");
-            
+
             var file = File.ReadAllText(filePath);
 
             response.SetHeader("Content-Length", file.Length.ToString());
@@ -71,6 +70,20 @@ void RespondToClient(HttpRequest request, TcpClient client)
         {
             response.SetStatusCode(HttpStatusCode.NotFound);
         }
+    }
+    else if (path.StartsWith("/files/") && request.Method == "POST")
+    {
+        string directory = args[1];
+
+        Console.WriteLine(directory);
+
+        string fileName = ParseFileName(path);
+        Console.WriteLine($"full path: '{Path.Combine([directory, fileName])}");
+        var filePath = Path.Combine([directory, fileName]);
+        // TODO: why do i have to trim the body each time?
+        File.WriteAllText(filePath, request.Body?.Trim('\0'), System.Text.Encoding.ASCII);
+
+        response.SetStatusCode(HttpStatusCode.Created);
     }
     else if (path == "/")
     {
