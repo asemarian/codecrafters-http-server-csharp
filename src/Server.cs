@@ -51,10 +51,8 @@ void RespondToClient(HttpRequest request, TcpClient client)
     {
         string directory = args[1];
 
-        Console.WriteLine(directory);
-
         string fileName = ParseFileName(path);
-        Console.WriteLine($"full path: '{Path.Combine([directory, fileName])}");
+        
         var filePath = Path.Combine([directory, fileName]);
         if (File.Exists(filePath))
         {
@@ -75,10 +73,8 @@ void RespondToClient(HttpRequest request, TcpClient client)
     {
         string directory = args[1];
 
-        Console.WriteLine(directory);
-
         string fileName = ParseFileName(path);
-        Console.WriteLine($"full path: '{Path.Combine([directory, fileName])}");
+
         var filePath = Path.Combine([directory, fileName]);
         // TODO: why do i have to trim the body each time?
         File.WriteAllText(filePath, request.Body?.Trim('\0'), System.Text.Encoding.ASCII);
